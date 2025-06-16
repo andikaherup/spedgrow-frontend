@@ -137,7 +137,11 @@
 
       <!-- NFC Payment Modal -->
       <ion-modal :is-open="showNFCModal" @did-dismiss="showNFCModal = false">
-        <NFCTransaction @close="showNFCModal = false" />
+        <NFCTransaction
+          @close="showNFCModal = false"
+          @transaction-created="onTransactionCreated"
+          :on-success="refreshData"
+        />
       </ion-modal>
     </ion-content>
   </ion-page>
@@ -180,6 +184,8 @@ import {
 } from "../services/api";
 import { NFCService } from "@/services/nfc";
 import NFCTransaction from "@/components/NFCTransaction.vue";
+import { useRouter } from "vue-router";
+const router = useRouter();
 
 const summary = ref<TransactionSummary>({
   total_transactions: 0,
@@ -225,6 +231,7 @@ const openNFCPayment = () => {
 const viewAllTransactions = () => {
   // Navigate to transaction list
   console.log("Navigate to transaction list");
+  router.push("/tabs/transactions");
 };
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -232,6 +239,11 @@ const formatCurrency = (amount: number, currency: string) => {
     style: "currency",
     currency: currency,
   }).format(amount);
+};
+
+const onTransactionCreated = () => {
+  showNFCModal.value = false;
+  refreshData(); // This will work now
 };
 
 const formatDate = (dateString: string) => {

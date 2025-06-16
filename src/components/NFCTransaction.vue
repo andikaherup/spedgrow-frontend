@@ -196,6 +196,10 @@ import { TransactionService, Transaction } from "../services/api";
 
 const emit = defineEmits(["close", "transaction-created"]);
 
+const props = defineProps<{
+  onSuccess?: () => void;
+}>();
+
 const isScanning = ref(false);
 const transactionComplete = ref(false);
 const nfcSupported = ref(true);
@@ -277,6 +281,9 @@ const processNFCTransaction = async (nfcData: NFCData) => {
     transactionComplete.value = true;
 
     await NFCService.stopNFCReading();
+    if (props.onSuccess) {
+      props.onSuccess();
+    }
     emit("transaction-created");
   } catch (error) {
     console.error("Failed to process NFC transaction:", error);

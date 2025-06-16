@@ -188,6 +188,8 @@ const summary = ref<TransactionSummary>({
   debit_amount: 0,
   nfc_transactions: 0,
   pending_transactions: 0,
+  completed_transactions: 0,
+  failed_transactions: 0,
 });
 
 const recentNfcTransactions = ref<Transaction[]>([]);
@@ -237,7 +239,7 @@ const formatDate = (dateString: string) => {
 };
 
 onMounted(async () => {
-  nfcSupported.value = await NFCService.checkNFCSupport();
+  nfcSupported.value = await NFCService.checkNFCSupported();
   await refreshData();
 });
 </script>

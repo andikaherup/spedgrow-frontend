@@ -143,12 +143,6 @@
     </ion-content>
   </div>
 </template>
-<script lang="ts">
-import { defineComponent } from "vue";
-export default defineComponent({
-  name: "NFCTransaction",
-});
-</script>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
@@ -174,7 +168,7 @@ import { wifi, close, checkmarkCircle } from "ionicons/icons";
 import { NFCService, NFCData } from "../services/nfc";
 import { TransactionService, Transaction } from "../services/api";
 
-defineEmits(["close"]);
+defineEmits(["close", "transaction-created"]);
 
 const isScanning = ref(false);
 const transactionComplete = ref(false);
@@ -302,13 +296,20 @@ const formatCurrency = (amount: number, currency: string) => {
 };
 
 onMounted(async () => {
-  nfcSupported.value = await NFCService.checkNFCSupport();
+  nfcSupported.value = await NFCService.checkNFCSupported();
 });
 
 onUnmounted(async () => {
   if (isScanning.value) {
     await NFCService.stopNFCReading();
   }
+});
+</script>
+
+<script lang="ts">
+import { defineComponent } from "vue";
+export default defineComponent({
+  name: "NFCTransaction",
 });
 </script>
 

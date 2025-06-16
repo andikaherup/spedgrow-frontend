@@ -1,11 +1,11 @@
 <template>
-  <div class="nfc-transaction">
+  <ion-page>
     <ion-header>
       <ion-toolbar>
         <ion-title>NFC Payment</ion-title>
         <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
         <ion-buttons slot="start">
-          <ion-button @click="$emit('close')">
+          <ion-button @click="closeModal">
             <ion-icon :icon="close"></ion-icon>
           </ion-button>
         </ion-buttons>
@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content class="ion-padding">
-      <div class="nfc-status-container">
+      <div class="nfc-container">
         <!-- NFC Status Display -->
         <div class="nfc-status" :class="nfcStatus">
           <div class="nfc-icon-container">
@@ -30,32 +30,38 @@
         </div>
 
         <!-- Transaction Form -->
-        <ion-card v-if="!isScanning && !transactionComplete">
+        <ion-card v-if="!isScanning && !transactionComplete" class="form-card">
           <ion-card-header>
             <ion-card-title>Transaction Details</ion-card-title>
           </ion-card-header>
           <ion-card-content>
             <ion-item>
-              <ion-label position="stacked">Amount</ion-label>
               <ion-input
                 v-model="transactionData.amount"
                 type="number"
                 step="0.01"
-                placeholder="0.00"
+                placeholder="Enter amount"
+                label="Amount ($)"
+                label-placement="stacked"
               ></ion-input>
             </ion-item>
 
             <ion-item>
-              <ion-label position="stacked">Merchant</ion-label>
               <ion-input
                 v-model="transactionData.merchant_name"
-                placeholder="Merchant name"
+                placeholder="Enter merchant name"
+                label="Merchant"
+                label-placement="stacked"
               ></ion-input>
             </ion-item>
 
             <ion-item>
-              <ion-label position="stacked">Category</ion-label>
-              <ion-select v-model="transactionData.category">
+              <ion-select
+                v-model="transactionData.category"
+                placeholder="Select category"
+                label="Category"
+                label-placement="stacked"
+              >
                 <ion-select-option value="food"
                   >Food & Dining</ion-select-option
                 >
@@ -77,6 +83,7 @@
           <ion-button
             v-if="!isScanning && !transactionComplete"
             expand="block"
+            size="large"
             @click="startNFCPayment"
             :disabled="!canStartPayment"
           >
@@ -88,17 +95,23 @@
           <ion-button
             v-if="isScanning"
             expand="block"
+            size="large"
             color="danger"
             @click="cancelNFC"
           >
+            <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+            <ion-icon :icon="close" slot="start"></ion-icon>
             Cancel
           </ion-button>
 
           <ion-button
             v-if="transactionComplete"
             expand="block"
+            size="large"
             @click="resetTransaction"
           >
+            <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+            <ion-icon :icon="add" slot="start"></ion-icon>
             New Transaction
           </ion-button>
         </div>
@@ -106,47 +119,58 @@
         <!-- Transaction Result -->
         <ion-card v-if="completedTransaction" class="result-card">
           <ion-card-header>
-            <ion-card-title>
+            <ion-card-title class="success-title">
               <ion-icon :icon="checkmarkCircle" color="success"></ion-icon>
               Transaction Complete
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <ion-item>
-              <ion-label>
-                <h3>Amount</h3>
-                <p>
-                  {{
-                    formatCurrency(
-                      completedTransaction.amount,
-                      completedTransaction.currency
-                    )
-                  }}
-                </p>
-              </ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-label>
-                <h3>Merchant</h3>
-                <p>{{ completedTransaction.merchant_name }}</p>
-              </ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-label>
-                <h3>Transaction ID</h3>
-                <p>{{ completedTransaction.transaction_id }}</p>
-              </ion-label>
-            </ion-item>
+            <ion-list>
+              <ion-item>
+                <ion-label>
+                  <h3>Amount</h3>
+                  <p class="amount-text">
+                    {{
+                      formatCurrency(
+                        completedTransaction.amount,
+                        completedTransaction.currency
+                      )
+                    }}
+                  </p>
+                </ion-label>
+              </ion-item>
+              <ion-item>
+                <ion-label>
+                  <h3>Merchant</h3>
+                  <p>{{ completedTransaction.merchant_name }}</p>
+                </ion-label>
+              </ion-item>
+              <ion-item>
+                <ion-label>
+                  <h3>Transaction ID</h3>
+                  <p class="transaction-id">
+                    {{ completedTransaction.transaction_id }}
+                  </p>
+                </ion-label>
+              </ion-item>
+              <ion-item>
+                <ion-label>
+                  <h3>Status</h3>
+                  <ion-badge color="success">COMPLETED</ion-badge>
+                </ion-label>
+              </ion-item>
+            </ion-list>
           </ion-card-content>
         </ion-card>
       </div>
     </ion-content>
-  </div>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
+  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -159,20 +183,22 @@ import {
   IonCardTitle,
   IonCardContent,
   IonItem,
-  IonLabel,
   IonInput,
   IonSelect,
   IonSelectOption,
+  IonList,
+  IonLabel,
+  IonBadge,
 } from "@ionic/vue";
-import { wifi, close, checkmarkCircle } from "ionicons/icons";
+import { wifi, close, checkmarkCircle, add } from "ionicons/icons";
 import { NFCService, NFCData } from "../services/nfc";
 import { TransactionService, Transaction } from "../services/api";
 
-defineEmits(["close", "transaction-created"]);
+const emit = defineEmits(["close", "transaction-created"]);
 
 const isScanning = ref(false);
 const transactionComplete = ref(false);
-const nfcSupported = ref(false);
+const nfcSupported = ref(true);
 const completedTransaction = ref<Transaction | null>(null);
 
 const transactionData = ref({
@@ -191,9 +217,8 @@ const nfcStatus = computed(() => {
 });
 
 const statusMessage = computed(() => {
-  if (transactionComplete.value) return "Payment Successful";
+  if (transactionComplete.value) return "Payment Successful!";
   if (isScanning.value) return "Tap your card";
-  if (!nfcSupported.value) return "NFC not supported";
   return "Ready for payment";
 });
 
@@ -201,36 +226,26 @@ const statusDescription = computed(() => {
   if (transactionComplete.value)
     return "Your transaction has been processed successfully";
   if (isScanning.value) return "Hold your NFC card near the device";
-  if (!nfcSupported.value) return "This device does not support NFC";
-  return "Fill in the transaction details and tap Start NFC Payment";
+  return "Fill in the transaction details below and tap Start NFC Payment";
 });
 
 const canStartPayment = computed(() => {
   return (
     transactionData.value.amount > 0 &&
-    transactionData.value.merchant_name.trim() !== "" &&
-    nfcSupported.value
+    transactionData.value.merchant_name.trim() !== ""
   );
 });
 
+const closeModal = () => {
+  emit("close");
+};
+
 const startNFCPayment = async () => {
   try {
-    const hasPermission = await NFCService.requestPermissions();
-    if (!hasPermission) {
-      alert("NFC permissions are required for this feature");
-      return;
-    }
-
-    const isEnabled = await NFCService.isEnabled();
-    if (!isEnabled) {
-      alert("Please enable NFC in your device settings");
-      return;
-    }
-
     isScanning.value = true;
     await NFCService.startNFCReading();
 
-    // Simulate NFC detection after 3 seconds for demo
+    // Simulate NFC detection after 3 seconds
     setTimeout(() => {
       if (isScanning.value) {
         const simulatedData = NFCService.simulateNFCDetection();
@@ -239,7 +254,6 @@ const startNFCPayment = async () => {
     }, 3000);
   } catch (error) {
     console.error("Failed to start NFC payment:", error);
-    alert("Failed to start NFC reading. Please try again.");
     isScanning.value = false;
   }
 };
@@ -263,9 +277,9 @@ const processNFCTransaction = async (nfcData: NFCData) => {
     transactionComplete.value = true;
 
     await NFCService.stopNFCReading();
+    emit("transaction-created");
   } catch (error) {
     console.error("Failed to process NFC transaction:", error);
-    alert("Transaction failed. Please try again.");
     await cancelNFC();
   }
 };
@@ -314,20 +328,19 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.nfc-status-container {
+.nfc-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 24px;
   padding: 20px;
+  min-height: 100%;
 }
 
 .nfc-status {
   text-align: center;
   padding: 40px 20px;
   border-radius: 16px;
-  width: 100%;
-  max-width: 300px;
+  margin-bottom: 20px;
 }
 
 .nfc-status.ready {
@@ -348,10 +361,12 @@ export default defineComponent({
 .nfc-icon-container {
   position: relative;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .nfc-icon {
-  font-size: 48px;
+  font-size: 64px;
   position: relative;
   z-index: 2;
 }
@@ -365,26 +380,29 @@ export default defineComponent({
 
 .wave {
   position: absolute;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
   animation: wave-animation 2s infinite;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .wave-1 {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   animation-delay: 0s;
 }
 
 .wave-2 {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   animation-delay: 0.5s;
 }
 
 .wave-3 {
-  width: 100px;
-  height: 100px;
+  width: 160px;
+  height: 160px;
   animation-delay: 1s;
 }
 
@@ -399,13 +417,48 @@ export default defineComponent({
   }
 }
 
+.form-card {
+  margin: 0;
+}
+
 .action-buttons {
-  width: 100%;
-  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .result-card {
-  margin-top: 20px;
+  margin: 0;
   border: 2px solid var(--ion-color-success);
+}
+
+.success-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ion-color-success);
+}
+
+.amount-text {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--ion-color-success);
+}
+
+.transaction-id {
+  font-family: monospace;
+  font-size: 0.9em;
+  color: var(--ion-color-medium);
+}
+
+.nfc-status h2 {
+  margin: 16px 0 8px 0;
+  font-size: 1.5em;
+}
+
+.nfc-status p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1em;
 }
 </style>

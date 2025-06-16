@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.BASE_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -32,31 +32,43 @@ export interface TransactionSummary {
     debit_amount: number;
     nfc_transactions: number;
     pending_transactions: number;
+    completed_transactions: number;
+    failed_transactions: number;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
 }
 
 export class TransactionService {
-    static async getTransactions(params: any = {}) {
+    static async getTransactions(params: any = {}): Promise<PaginatedResponse<Transaction>> {
         const response = await api.get('/transactions', { params });
         return response.data;
     }
 
-    static async getTransaction(id: number) {
+    static async getTransaction(id: number): Promise<Transaction> {
         const response = await api.get(`/transactions/${id}`);
         return response.data;
     }
 
-    static async createTransaction(transaction: Partial<Transaction>) {
+    static async createTransaction(transaction: Partial<Transaction>): Promise<Transaction> {
         const response = await api.post('/transactions', transaction);
         return response.data;
     }
 
-    static async getSummary(startDate?: string, endDate?: string) {
+    static async getSummary(startDate?: string, endDate?: string): Promise<TransactionSummary> {
         const params = { start_date: startDate, end_date: endDate };
         const response = await api.get('/transactions/stats/summary', { params });
         return response.data;
     }
 
-    static async getRecentNfcTransactions() {
+    static async getRecentNfcTransactions(): Promise<Transaction[]> {
         const response = await api.get('/transactions/nfc/recent');
         return response.data;
     }

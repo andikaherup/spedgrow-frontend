@@ -111,6 +111,7 @@
             <ion-item
               v-for="transaction in recentNfcTransactions"
               :key="transaction.id"
+              @click="viewTransaction(transaction)"
             >
               <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
               <ion-avatar slot="start">
@@ -209,6 +210,10 @@ const loadSummary = async () => {
   } catch (error) {
     console.error("Failed to load summary:", error);
   }
+};
+
+const viewTransaction = (transaction: Transaction) => {
+  router.push(`/tabs/transactions/${transaction.id}`);
 };
 
 const loadRecentNfcTransactions = async () => {

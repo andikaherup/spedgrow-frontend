@@ -23,6 +23,10 @@ const routes: Array<RouteRecordRaw> = [
         path: 'transactions',
         component: () => import('../views/TransactionList.vue')
       },
+      {
+        path: 'transactions/:id',
+        component: () => import('../views/TransactionDetail.vue')
+      },
 
     ]
   }

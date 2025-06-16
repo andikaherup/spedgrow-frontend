@@ -27,7 +27,10 @@ const routes: Array<RouteRecordRaw> = [
         path: 'transactions/:id',
         component: () => import('../views/TransactionDetail.vue')
       },
-
+      {
+        path: 'nfc',
+        component: () => import('../views/NFCPayment.vue')
+      }
     ]
   }
 ];
